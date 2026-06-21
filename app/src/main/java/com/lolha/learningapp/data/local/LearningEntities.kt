@@ -73,3 +73,80 @@ data class ScheduleItemEntity(
     val status: String = "todo",
     val createdAt: Long = System.currentTimeMillis(),
 )
+
+@Entity(tableName = "homework_drafts")
+data class HomeworkDraftEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val sourceType: String,
+    val sourceRemoteId: String,
+    val subject: String,
+    val title: String,
+    val prompt: String,
+    val completionStandard: String = "",
+    val draftText: String = "",
+    val status: String = "draft",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "user_profiles")
+data class UserProfileEntity(
+    @PrimaryKey val id: Long = 1,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val nickname: String = "",
+    val learningGoal: String = "",
+    val timezone: String = "Asia/Kuala_Lumpur",
+    val updatedAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "availability_rules")
+data class AvailabilityRuleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val weekday: String,
+    val startTime: String,
+    val endTime: String,
+    val label: String,
+    val ruleType: String = "work",
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "availability_exceptions")
+data class AvailabilityExceptionEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val date: String,
+    val startTime: String,
+    val endTime: String,
+    val label: String,
+    val ruleType: String = "unavailable",
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "social_publishing_assignments")
+data class SocialPublishingAssignmentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val title: String,
+    val description: String,
+    val month: String,
+    val dueDate: String,
+    val requiredPlatforms: String = "X,Pixiv",
+    val artworkNotes: String = "",
+    val status: String = "active",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "social_post_proofs")
+data class SocialPostProofEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val assignmentRemoteId: String,
+    val platform: String,
+    val url: String,
+    val verificationStatus: String = "pending",
+    val aiFeedback: String = "",
+    val submittedAt: Long = System.currentTimeMillis(),
+)

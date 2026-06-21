@@ -12,8 +12,14 @@ import androidx.room.RoomDatabase
         HomeworkSubmissionEntity::class,
         FocusSessionEntity::class,
         ScheduleItemEntity::class,
+        HomeworkDraftEntity::class,
+        UserProfileEntity::class,
+        AvailabilityRuleEntity::class,
+        AvailabilityExceptionEntity::class,
+        SocialPublishingAssignmentEntity::class,
+        SocialPostProofEntity::class,
     ],
-    version = 4,
+    version = 5,
 )
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun learningDao(): LearningDao

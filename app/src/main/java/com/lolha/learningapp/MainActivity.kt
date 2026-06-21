@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
@@ -67,9 +68,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.ChatMessageEntity
+import com.lolha.learningapp.data.local.AvailabilityExceptionEntity
+import com.lolha.learningapp.data.local.AvailabilityRuleEntity
+import com.lolha.learningapp.data.local.HomeworkDraftEntity
 import com.lolha.learningapp.data.local.HomeworkSubmissionEntity
 import com.lolha.learningapp.data.local.LearningTaskEntity
 import com.lolha.learningapp.data.local.ScheduleItemEntity
+import com.lolha.learningapp.data.local.SocialPostProofEntity
+import com.lolha.learningapp.data.local.SocialPublishingAssignmentEntity
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import java.util.Locale
@@ -126,7 +132,33 @@ class MainActivity : ComponentActivity() {
                     onScheduleDone = viewModel::markScheduleDone,
                     onScheduleDelete = viewModel::deleteScheduleItem,
                     onScheduleFocus = viewModel::startScheduleFocus,
+                    onScheduleHomework = viewModel::openHomeworkForSchedule,
                     onTaskDone = viewModel::markTaskDone,
+                    onTaskHomework = viewModel::openHomeworkForTask,
+                    onDraftTextChanged = viewModel::updateDraftText,
+                    onSaveDraft = viewModel::saveActiveDraft,
+                    onSubmitDraft = viewModel::submitActiveDraft,
+                    onProfileNicknameChanged = viewModel::updateProfileNickname,
+                    onProfileGoalChanged = viewModel::updateProfileGoal,
+                    onProfileTimezoneChanged = viewModel::updateProfileTimezone,
+                    onSaveProfile = viewModel::saveProfile,
+                    onRuleWeekdayChanged = viewModel::updateRuleWeekday,
+                    onRuleStartChanged = viewModel::updateRuleStartTime,
+                    onRuleEndChanged = viewModel::updateRuleEndTime,
+                    onRuleLabelChanged = viewModel::updateRuleLabel,
+                    onRuleTypeChanged = viewModel::updateRuleType,
+                    onAddRule = viewModel::addAvailabilityRule,
+                    onDeleteRule = viewModel::deleteAvailabilityRule,
+                    onExceptionDateChanged = viewModel::updateExceptionDate,
+                    onExceptionStartChanged = viewModel::updateExceptionStartTime,
+                    onExceptionEndChanged = viewModel::updateExceptionEndTime,
+                    onExceptionLabelChanged = viewModel::updateExceptionLabel,
+                    onExceptionTypeChanged = viewModel::updateExceptionType,
+                    onAddException = viewModel::addAvailabilityException,
+                    onDeleteException = viewModel::deleteAvailabilityException,
+                    onCreateSocialAssignment = viewModel::createMonthlySocialAssignment,
+                    onProofInputChanged = viewModel::updateProofInput,
+                    onSubmitProof = viewModel::submitSocialProof,
                     onFocusMinutesChanged = viewModel::setFocusMinutes,
                     onStartFocus = {
                         requestScreenPinning()
@@ -201,7 +233,33 @@ private fun LearningAppScreen(
     onScheduleDone: (ScheduleItemEntity) -> Unit,
     onScheduleDelete: (String) -> Unit,
     onScheduleFocus: (ScheduleItemEntity) -> Unit,
+    onScheduleHomework: (ScheduleItemEntity) -> Unit,
     onTaskDone: (Long) -> Unit,
+    onTaskHomework: (LearningTaskEntity) -> Unit,
+    onDraftTextChanged: (String) -> Unit,
+    onSaveDraft: () -> Unit,
+    onSubmitDraft: () -> Unit,
+    onProfileNicknameChanged: (String) -> Unit,
+    onProfileGoalChanged: (String) -> Unit,
+    onProfileTimezoneChanged: (String) -> Unit,
+    onSaveProfile: () -> Unit,
+    onRuleWeekdayChanged: (String) -> Unit,
+    onRuleStartChanged: (String) -> Unit,
+    onRuleEndChanged: (String) -> Unit,
+    onRuleLabelChanged: (String) -> Unit,
+    onRuleTypeChanged: (String) -> Unit,
+    onAddRule: () -> Unit,
+    onDeleteRule: (String) -> Unit,
+    onExceptionDateChanged: (String) -> Unit,
+    onExceptionStartChanged: (String) -> Unit,
+    onExceptionEndChanged: (String) -> Unit,
+    onExceptionLabelChanged: (String) -> Unit,
+    onExceptionTypeChanged: (String) -> Unit,
+    onAddException: () -> Unit,
+    onDeleteException: (String) -> Unit,
+    onCreateSocialAssignment: () -> Unit,
+    onProofInputChanged: (String, String) -> Unit,
+    onSubmitProof: (SocialPublishingAssignmentEntity, String) -> Unit,
     onFocusMinutesChanged: (Int) -> Unit,
     onStartFocus: () -> Unit,
     onStopFocus: () -> Unit,
@@ -264,10 +322,47 @@ private fun LearningAppScreen(
                     onDone = onScheduleDone,
                     onDelete = onScheduleDelete,
                     onFocus = onScheduleFocus,
+                    onHomework = onScheduleHomework,
                 )
-                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone)
+                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone, onTaskHomework)
+                AppTab.Homework -> HomeworkScreen(
+                    activeDraft = state.activeDraft,
+                    draftText = state.draftText,
+                    loading = state.loading,
+                    error = state.error,
+                    onDraftTextChanged = onDraftTextChanged,
+                    onSaveDraft = onSaveDraft,
+                    onSubmitDraft = onSubmitDraft,
+                )
                 AppTab.Focus -> FocusScreen(state, onFocusMinutesChanged, onStartFocus, onStopFocus)
                 AppTab.Journal -> JournalScreen(state.submissions)
+                AppTab.Profile -> ProfileScreen(
+                    state = state,
+                    onNicknameChanged = onProfileNicknameChanged,
+                    onGoalChanged = onProfileGoalChanged,
+                    onTimezoneChanged = onProfileTimezoneChanged,
+                    onSaveProfile = onSaveProfile,
+                    onRuleWeekdayChanged = onRuleWeekdayChanged,
+                    onRuleStartChanged = onRuleStartChanged,
+                    onRuleEndChanged = onRuleEndChanged,
+                    onRuleLabelChanged = onRuleLabelChanged,
+                    onRuleTypeChanged = onRuleTypeChanged,
+                    onAddRule = onAddRule,
+                    onDeleteRule = onDeleteRule,
+                    onExceptionDateChanged = onExceptionDateChanged,
+                    onExceptionStartChanged = onExceptionStartChanged,
+                    onExceptionEndChanged = onExceptionEndChanged,
+                    onExceptionLabelChanged = onExceptionLabelChanged,
+                    onExceptionTypeChanged = onExceptionTypeChanged,
+                    onAddException = onAddException,
+                    onDeleteException = onDeleteException,
+                )
+                AppTab.Social -> SocialScreen(
+                    state = state,
+                    onCreateAssignment = onCreateSocialAssignment,
+                    onProofInputChanged = onProofInputChanged,
+                    onSubmitProof = onSubmitProof,
+                )
             }
         }
     }
@@ -278,8 +373,11 @@ private val AppTab.label: String
         AppTab.Chat -> "Chat"
         AppTab.Schedule -> "Schedule"
         AppTab.Tasks -> "Tasks"
+        AppTab.Homework -> "Homework"
         AppTab.Focus -> "Focus"
         AppTab.Journal -> "Journal"
+        AppTab.Profile -> "Profile"
+        AppTab.Social -> "Social"
     }
 
 private val AppTab.icon: ImageVector
@@ -287,8 +385,11 @@ private val AppTab.icon: ImageVector
         AppTab.Chat -> Icons.Default.Chat
         AppTab.Schedule -> Icons.Default.Timer
         AppTab.Tasks -> Icons.Default.Assignment
+        AppTab.Homework -> Icons.Default.Assignment
         AppTab.Focus -> Icons.Default.Timer
         AppTab.Journal -> Icons.Default.History
+        AppTab.Profile -> Icons.Default.Person
+        AppTab.Social -> Icons.Default.Image
     }
 
 @Composable
@@ -411,6 +512,7 @@ private fun ScheduleScreen(
     onDone: (ScheduleItemEntity) -> Unit,
     onDelete: (String) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
+    onHomework: (ScheduleItemEntity) -> Unit,
 ) {
     val today = LocalDate.now().toString()
     val visibleItems = when (state.scheduleMode) {
@@ -467,7 +569,13 @@ private fun ScheduleScreen(
                     Text(date, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 }
                 items(itemsForDate) { item ->
-                    ScheduleCard(item = item, onDone = onDone, onDelete = onDelete, onFocus = onFocus)
+                    ScheduleCard(
+                        item = item,
+                        onDone = onDone,
+                        onDelete = onDelete,
+                        onFocus = onFocus,
+                        onHomework = onHomework,
+                    )
                 }
             }
         }
@@ -498,6 +606,7 @@ private fun ScheduleCard(
     onDone: (ScheduleItemEntity) -> Unit,
     onDelete: (String) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
+    onHomework: (ScheduleItemEntity) -> Unit,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -525,9 +634,21 @@ private fun ScheduleCard(
             }
             if (item.requiresFocusTimer) {
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = { onFocus(item) }) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    Text(" Start")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = { onFocus(item) }) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null)
+                        Text(" Start")
+                    }
+                    OutlinedButton(onClick = { onHomework(item) }) {
+                        Icon(Icons.Default.Assignment, contentDescription = null)
+                        Text(" Homework")
+                    }
+                }
+            } else {
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(onClick = { onHomework(item) }) {
+                    Icon(Icons.Default.Assignment, contentDescription = null)
+                    Text(" Homework")
                 }
             }
         }
@@ -575,6 +696,7 @@ private fun ChatBubble(message: ChatMessageEntity, onDelete: (String) -> Unit) {
 private fun TasksScreen(
     tasks: List<LearningTaskEntity>,
     onTaskDone: (Long) -> Unit,
+    onTaskHomework: (LearningTaskEntity) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -615,6 +737,368 @@ private fun TasksScreen(
                         Spacer(Modifier.height(10.dp))
                         Text("Next", fontWeight = FontWeight.Bold)
                         Text(task.nextActionInstruction)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(onClick = { onTaskHomework(task) }) {
+                        Icon(Icons.Default.Assignment, contentDescription = null)
+                        Text(" Homework")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeworkScreen(
+    activeDraft: HomeworkDraftEntity?,
+    draftText: String,
+    loading: Boolean,
+    error: String?,
+    onDraftTextChanged: (String) -> Unit,
+    onSaveDraft: () -> Unit,
+    onSubmitDraft: () -> Unit,
+) {
+    if (activeDraft == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        ) {
+            EmptyState(
+                title = "No homework open",
+                body = "Open a schedule item or task, then tap Homework.",
+            )
+        }
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(activeDraft.title, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+        Text("${activeDraft.subject} · ${activeDraft.status}")
+        Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Task", fontWeight = FontWeight.Bold)
+                Text(activeDraft.prompt)
+                if (activeDraft.completionStandard.isNotBlank()) {
+                    Spacer(Modifier.height(10.dp))
+                    Text("Completion", fontWeight = FontWeight.Bold)
+                    Text(activeDraft.completionStandard)
+                }
+            }
+        }
+        OutlinedTextField(
+            value = draftText,
+            onValueChange = onDraftTextChanged,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            placeholder = { Text("Write your Japanese or English homework here") },
+        )
+        error?.let {
+            Text(it, color = Color(0xFFB91C1C))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onSaveDraft, modifier = Modifier.weight(1f)) {
+                Text("Save Draft")
+            }
+            Button(onClick = onSubmitDraft, enabled = !loading && draftText.isNotBlank(), modifier = Modifier.weight(1f)) {
+                Text("Submit to AI")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileScreen(
+    state: MainUiState,
+    onNicknameChanged: (String) -> Unit,
+    onGoalChanged: (String) -> Unit,
+    onTimezoneChanged: (String) -> Unit,
+    onSaveProfile: () -> Unit,
+    onRuleWeekdayChanged: (String) -> Unit,
+    onRuleStartChanged: (String) -> Unit,
+    onRuleEndChanged: (String) -> Unit,
+    onRuleLabelChanged: (String) -> Unit,
+    onRuleTypeChanged: (String) -> Unit,
+    onAddRule: () -> Unit,
+    onDeleteRule: (String) -> Unit,
+    onExceptionDateChanged: (String) -> Unit,
+    onExceptionStartChanged: (String) -> Unit,
+    onExceptionEndChanged: (String) -> Unit,
+    onExceptionLabelChanged: (String) -> Unit,
+    onExceptionTypeChanged: (String) -> Unit,
+    onAddException: () -> Unit,
+    onDeleteException: (String) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Profile", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    OutlinedTextField(
+                        value = state.profileNickname,
+                        onValueChange = onNicknameChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nickname") },
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = state.profileGoal,
+                        onValueChange = onGoalChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Learning goal") },
+                    )
+                    OutlinedTextField(
+                        value = state.profileTimezone,
+                        onValueChange = onTimezoneChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Timezone") },
+                        singleLine = true,
+                    )
+                    Button(onClick = onSaveProfile) {
+                        Text("Save Profile")
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Weekly Availability", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text("work = No tasks allowed", color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = state.ruleWeekday,
+                            onValueChange = onRuleWeekdayChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Day") },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = state.ruleType,
+                            onValueChange = onRuleTypeChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Type") },
+                            singleLine = true,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = state.ruleStartTime,
+                            onValueChange = onRuleStartChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Start") },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = state.ruleEndTime,
+                            onValueChange = onRuleEndChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("End") },
+                            singleLine = true,
+                        )
+                    }
+                    OutlinedTextField(
+                        value = state.ruleLabel,
+                        onValueChange = onRuleLabelChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Label") },
+                        singleLine = true,
+                    )
+                    Button(onClick = onAddRule) {
+                        Text("Add Weekly Rule")
+                    }
+                }
+            }
+        }
+
+        items(state.availabilityRules) { rule ->
+            AvailabilityRuleRow(rule = rule, onDelete = onDeleteRule)
+        }
+
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Special Date", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = state.exceptionDate,
+                            onValueChange = onExceptionDateChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("YYYY-MM-DD") },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = state.exceptionType,
+                            onValueChange = onExceptionTypeChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Type") },
+                            singleLine = true,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = state.exceptionStartTime,
+                            onValueChange = onExceptionStartChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Start") },
+                            singleLine = true,
+                        )
+                        OutlinedTextField(
+                            value = state.exceptionEndTime,
+                            onValueChange = onExceptionEndChanged,
+                            modifier = Modifier.weight(1f),
+                            label = { Text("End") },
+                            singleLine = true,
+                        )
+                    }
+                    OutlinedTextField(
+                        value = state.exceptionLabel,
+                        onValueChange = onExceptionLabelChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Label") },
+                        singleLine = true,
+                    )
+                    Button(onClick = onAddException) {
+                        Text("Add Special Date")
+                    }
+                }
+            }
+        }
+
+        items(state.availabilityExceptions) { exception ->
+            AvailabilityExceptionRow(exception = exception, onDelete = onDeleteException)
+        }
+    }
+}
+
+@Composable
+private fun AvailabilityRuleRow(rule: AvailabilityRuleEntity, onDelete: (String) -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("${rule.weekday} ${rule.startTime}-${rule.endTime}", fontWeight = FontWeight.Bold)
+                Text("${rule.ruleType} · ${rule.label}")
+            }
+            IconButton(onClick = { onDelete(rule.remoteId) }) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete rule")
+            }
+        }
+    }
+}
+
+@Composable
+private fun AvailabilityExceptionRow(exception: AvailabilityExceptionEntity, onDelete: (String) -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("${exception.date} ${exception.startTime}-${exception.endTime}", fontWeight = FontWeight.Bold)
+                Text("${exception.ruleType} · ${exception.label}")
+            }
+            IconButton(onClick = { onDelete(exception.remoteId) }) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete exception")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SocialScreen(
+    state: MainUiState,
+    onCreateAssignment: () -> Unit,
+    onProofInputChanged: (String, String) -> Unit,
+    onSubmitProof: (SocialPublishingAssignmentEntity, String) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Button(onClick = onCreateAssignment, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Image, contentDescription = null)
+                Text(" Create Monthly Art Assignment")
+            }
+        }
+        if (state.socialAssignments.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "No social assignment",
+                    body = "Create a monthly drawing post assignment, then submit X or Pixiv proof links.",
+                )
+            }
+        }
+        items(state.socialAssignments) { assignment ->
+            SocialAssignmentCard(
+                assignment = assignment,
+                proofs = state.socialProofs.filter { it.assignmentRemoteId == assignment.remoteId },
+                proofInputs = state.proofInputs,
+                onProofInputChanged = onProofInputChanged,
+                onSubmitProof = onSubmitProof,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SocialAssignmentCard(
+    assignment: SocialPublishingAssignmentEntity,
+    proofs: List<SocialPostProofEntity>,
+    proofInputs: Map<String, String>,
+    onProofInputChanged: (String, String) -> Unit,
+    onSubmitProof: (SocialPublishingAssignmentEntity, String) -> Unit,
+) {
+    Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(assignment.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Text("Due ${assignment.dueDate} · ${assignment.status}")
+            Text(assignment.description)
+            if (assignment.artworkNotes.isNotBlank()) {
+                Text(assignment.artworkNotes, color = Color(0xFF475569))
+            }
+            assignment.requiredPlatforms.split(",").map { it.trim() }.filter { it.isNotBlank() }.forEach { platform ->
+                val key = proofKey(assignment.remoteId, platform)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = proofInputs[key].orEmpty(),
+                        onValueChange = { onProofInputChanged(key, it) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("$platform public URL") },
+                        singleLine = true,
+                    )
+                    Button(onClick = { onSubmitProof(assignment, platform) }) {
+                        Text("Submit")
+                    }
+                }
+            }
+            proofs.forEach { proof ->
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("${proof.platform} · ${proof.verificationStatus}", fontWeight = FontWeight.Bold)
+                        Text(proof.url)
+                        if (proof.aiFeedback.isNotBlank()) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(proof.aiFeedback)
+                        }
                     }
                 }
             }
