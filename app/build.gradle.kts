@@ -41,9 +41,15 @@ android {
             ?: localProperties.getProperty("SUPABASE_URL").orEmpty()
         val supabaseAnonKey = providers.gradleProperty("SUPABASE_ANON_KEY").orNull
             ?: localProperties.getProperty("SUPABASE_ANON_KEY").orEmpty()
+        val supabaseAuthEmail = providers.gradleProperty("SUPABASE_AUTH_EMAIL").orNull
+            ?: localProperties.getProperty("SUPABASE_AUTH_EMAIL").orEmpty()
+        val supabaseAuthPassword = providers.gradleProperty("SUPABASE_AUTH_PASSWORD").orNull
+            ?: localProperties.getProperty("SUPABASE_AUTH_PASSWORD").orEmpty()
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
         buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        buildConfigField("String", "SUPABASE_AUTH_EMAIL", "\"$supabaseAuthEmail\"")
+        buildConfigField("String", "SUPABASE_AUTH_PASSWORD", "\"$supabaseAuthPassword\"")
     }
 
     buildFeatures {

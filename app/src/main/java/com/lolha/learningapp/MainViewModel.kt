@@ -4,76 +4,25 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.lolha.learningapp.data.LearningRepository
+import com.lolha.learningapp.data.RepositoryResult
 import com.lolha.learningapp.data.local.AvailabilityExceptionEntity
 import com.lolha.learningapp.data.local.AvailabilityRuleEntity
-import com.lolha.learningapp.data.local.ChatMessageEntity
 import com.lolha.learningapp.data.local.FocusSessionEntity
-import com.lolha.learningapp.data.local.HomeworkDraftEntity
-import com.lolha.learningapp.data.local.HomeworkSubmissionEntity
 import com.lolha.learningapp.data.local.LearningTaskEntity
 import com.lolha.learningapp.data.local.ScheduleItemEntity
-import com.lolha.learningapp.data.local.SocialPostProofEntity
 import com.lolha.learningapp.data.local.SocialPublishingAssignmentEntity
 import com.lolha.learningapp.data.local.UserProfileEntity
+import com.lolha.learningapp.domain.AvailabilityValidator
+import com.lolha.learningapp.ui.state.AiRequestKind
+import com.lolha.learningapp.ui.state.AiRequestState
+import com.lolha.learningapp.ui.state.AppTab
+import com.lolha.learningapp.ui.state.MainUiState
+import com.lolha.learningapp.ui.state.ScheduleMode
+import com.lolha.learningapp.ui.state.proofKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
-enum class AppTab {
-    Chat,
-    Schedule,
-    Tasks,
-    Homework,
-    Focus,
-    Journal,
-    Profile,
-    Social,
-}
-
-enum class ScheduleMode {
-    Today,
-    Week,
-}
-
-data class MainUiState(
-    val selectedTab: AppTab = AppTab.Chat,
-    val scheduleMode: ScheduleMode = ScheduleMode.Today,
-    val messages: List<ChatMessageEntity> = emptyList(),
-    val scheduleItems: List<ScheduleItemEntity> = emptyList(),
-    val tasks: List<LearningTaskEntity> = emptyList(),
-    val drafts: List<HomeworkDraftEntity> = emptyList(),
-    val activeDraft: HomeworkDraftEntity? = null,
-    val draftText: String = "",
-    val submissions: List<HomeworkSubmissionEntity> = emptyList(),
-    val profile: UserProfileEntity = UserProfileEntity(),
-    val availabilityRules: List<AvailabilityRuleEntity> = emptyList(),
-    val availabilityExceptions: List<AvailabilityExceptionEntity> = emptyList(),
-    val socialAssignments: List<SocialPublishingAssignmentEntity> = emptyList(),
-    val socialProofs: List<SocialPostProofEntity> = emptyList(),
-    val profileNickname: String = "",
-    val profileGoal: String = "",
-    val profileTimezone: String = "Asia/Kuala_Lumpur",
-    val ruleWeekday: String = "Mon",
-    val ruleStartTime: String = "09:00",
-    val ruleEndTime: String = "18:00",
-    val ruleLabel: String = "Work",
-    val ruleType: String = "work",
-    val exceptionDate: String = "",
-    val exceptionStartTime: String = "09:00",
-    val exceptionEndTime: String = "18:00",
-    val exceptionLabel: String = "Unavailable",
-    val exceptionType: String = "unavailable",
-    val proofInputs: Map<String, String> = emptyMap(),
-    val input: String = "",
-    val focusMinutes: Int = 45,
-    val remainingSeconds: Int = 45 * 60,
-    val focusRunning: Boolean = false,
-    val attachmentLabel: String? = null,
-    val loading: Boolean = false,
-    val error: String? = null,
-    val syncError: String? = null,
-)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = LearningRepository(
@@ -170,47 +119,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun requestDailyTask() {
+        if (uiState.value.loading) return
         sendTeacherRequest(
+            kind = AiRequestKind.DailyTask,
+            thinkingMessage = "AI teacher is preparing today's task...",
             visibleMessage = "請幫我佈置今日任務",
             modelPrompt = "請根據我目前的日文、英文、畫畫與健身訓練，佈置今日任務。每個任務都要有完成標準、建議時間與下一步行動。",
         )
     }
 
     fun requestDailySchedule() {
+        if (uiState.value.loading) return
         uiState.value = uiState.value.copy(selectedTab = AppTab.Schedule, scheduleMode = ScheduleMode.Today)
         viewModelScope.launch {
-            uiState.value = uiState.value.copy(loading = true, error = null, syncError = null)
+            beginAiRequest(AiRequestKind.DailySchedule, "AI teacher is building today's schedule...")
             try {
                 applySyncResult(repository.requestDailySchedule())
             } catch (error: Throwable) {
-                uiState.value = uiState.value.copy(error = error.message ?: "AI request failed")
+                failAiRequest(error.message ?: "AI request failed")
             } finally {
-                uiState.value = uiState.value.copy(loading = false)
+                endAiRequest()
             }
         }
     }
 
     fun requestWeeklySchedule() {
+        if (uiState.value.loading) return
         uiState.value = uiState.value.copy(selectedTab = AppTab.Schedule, scheduleMode = ScheduleMode.Week)
         viewModelScope.launch {
-            uiState.value = uiState.value.copy(loading = true, error = null, syncError = null)
+            beginAiRequest(AiRequestKind.WeeklySchedule, "AI teacher is building this week's schedule...")
             try {
                 applySyncResult(repository.requestWeeklySchedule())
             } catch (error: Throwable) {
-                uiState.value = uiState.value.copy(error = error.message ?: "AI request failed")
+                failAiRequest(error.message ?: "AI request failed")
             } finally {
-                uiState.value = uiState.value.copy(loading = false)
+                endAiRequest()
             }
         }
     }
 
     fun sendCurrentInput() {
+        if (uiState.value.loading) return
         val input = uiState.value.input.trim().ifEmpty {
             if (attachedImageBase64 != null) "請批改這份圖片作業。" else ""
         }
         if (input.isEmpty()) return
         uiState.value = uiState.value.copy(input = "")
         sendTeacherRequest(
+            kind = AiRequestKind.Chat,
+            thinkingMessage = "AI teacher is thinking...",
             visibleMessage = input,
             modelPrompt = input,
             imageBase64 = attachedImageBase64,
@@ -261,16 +218,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun submitActiveDraft() {
+        if (uiState.value.loading) return
         val draft = uiState.value.activeDraft ?: return
         viewModelScope.launch {
-            uiState.value = uiState.value.copy(loading = true, error = null, syncError = null)
+            beginAiRequest(AiRequestKind.HomeworkGrading, "AI teacher is grading your homework...")
             try {
                 applySyncResult(repository.submitDraft(draft.remoteId, uiState.value.draftText))
                 uiState.value = uiState.value.copy(selectedTab = AppTab.Journal)
             } catch (error: Throwable) {
-                uiState.value = uiState.value.copy(error = error.message ?: "AI grading failed")
+                failAiRequest(error.message ?: "AI grading failed")
             } finally {
-                uiState.value = uiState.value.copy(loading = false)
+                endAiRequest()
             }
         }
     }
@@ -352,6 +310,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addAvailabilityRule() {
         val current = uiState.value
+        val validationError = AvailabilityValidator.validateWeeklyRule(
+            weekday = current.ruleWeekday,
+            startTime = current.ruleStartTime,
+            endTime = current.ruleEndTime,
+        )
+        if (validationError != null) {
+            uiState.value = current.copy(error = validationError)
+            return
+        }
         viewModelScope.launch {
             applySyncResult(
                 repository.addAvailabilityRule(
@@ -395,7 +362,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addAvailabilityException() {
         val current = uiState.value
-        if (current.exceptionDate.isBlank()) return
+        if (current.exceptionDate.isBlank()) {
+            uiState.value = current.copy(error = "Date must use YYYY-MM-DD format.")
+            return
+        }
+        val validationError = AvailabilityValidator.validateException(
+            date = current.exceptionDate,
+            startTime = current.exceptionStartTime,
+            endTime = current.exceptionEndTime,
+        )
+        if (validationError != null) {
+            uiState.value = current.copy(error = validationError)
+            return
+        }
         viewModelScope.launch {
             applySyncResult(
                 repository.addAvailabilityException(
@@ -428,18 +407,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun submitSocialProof(assignment: SocialPublishingAssignmentEntity, platform: String) {
+        if (uiState.value.loading) return
         val key = proofKey(assignment.remoteId, platform)
         val url = uiState.value.proofInputs[key].orEmpty()
-        if (url.isBlank()) return
+        if (url.isBlank()) {
+            uiState.value = uiState.value.copy(error = "Please paste a public $platform URL first.")
+            return
+        }
         viewModelScope.launch {
-            uiState.value = uiState.value.copy(loading = true, error = null, syncError = null)
+            beginAiRequest(AiRequestKind.SocialProof, "AI teacher is verifying your public proof link...")
             try {
                 applySyncResult(repository.submitSocialProof(assignment, platform, url))
                 uiState.value = uiState.value.copy(proofInputs = uiState.value.proofInputs - key)
             } catch (error: Throwable) {
-                uiState.value = uiState.value.copy(error = error.message ?: "Proof verification failed")
+                failAiRequest(error.message ?: "Proof verification failed")
             } finally {
-                uiState.value = uiState.value.copy(loading = false)
+                endAiRequest()
             }
         }
     }
@@ -502,13 +485,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun sendTeacherRequest(
+        kind: AiRequestKind,
+        thinkingMessage: String,
         visibleMessage: String,
         modelPrompt: String,
         imageBase64: String? = null,
         imageMimeType: String? = null,
     ) {
         viewModelScope.launch {
-            uiState.value = uiState.value.copy(loading = true, error = null, syncError = null)
+            beginAiRequest(kind, thinkingMessage)
             try {
                 applySyncResult(
                     repository.sendChatMessage(
@@ -519,16 +504,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ),
                 )
             } catch (error: Throwable) {
-                uiState.value = uiState.value.copy(error = error.message ?: "AI request failed")
+                failAiRequest(error.message ?: "AI request failed")
             } finally {
-                uiState.value = uiState.value.copy(loading = false)
+                endAiRequest()
             }
         }
     }
 
-    private fun applySyncResult(result: com.lolha.learningapp.data.RepositoryResult) {
+    private fun beginAiRequest(kind: AiRequestKind, message: String) {
+        uiState.value = uiState.value.copy(
+            aiRequestState = AiRequestState.Thinking(kind, message),
+            error = null,
+            syncError = null,
+        )
+    }
+
+    private fun failAiRequest(message: String) {
+        uiState.value = uiState.value.copy(
+            aiRequestState = AiRequestState.Failed(message),
+            error = message,
+        )
+    }
+
+    private fun endAiRequest() {
+        if (uiState.value.aiRequestState is AiRequestState.Thinking) {
+            uiState.value = uiState.value.copy(aiRequestState = AiRequestState.Idle)
+        }
+    }
+
+    private fun applySyncResult(result: RepositoryResult) {
         uiState.value = uiState.value.copy(syncError = result.syncError)
     }
 }
-
-fun proofKey(assignmentRemoteId: String, platform: String): String = "$assignmentRemoteId:$platform"

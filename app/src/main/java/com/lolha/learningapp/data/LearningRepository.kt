@@ -295,6 +295,7 @@ class LearningRepository(
 
     private suspend fun persistTeacherResponse(prompt: String, response: TeacherResponse): String? {
         var syncError: String? = null
+        // One teacher JSON response can fan out into chat, task, schedule, and journal rows.
         val teacherMessage = ChatMessageEntity(
             role = "teacher",
             message = response.teacherDialogue,
@@ -334,6 +335,7 @@ class LearningRepository(
                 )
             }
             val dates = items.map { it.date }.distinct()
+            // Schedule generation owns the requested dates, so stale items for those dates are replaced.
             dao.getScheduleItemsForDates(dates).forEach { oldItem ->
                 syncError = syncError.combine(syncDelete("schedule_items", oldItem.remoteId))
             }

@@ -161,5 +161,79 @@ create index if not exists availability_exceptions_device_date_idx on public.ava
 create index if not exists social_assignments_device_idx on public.social_publishing_assignments(device_id);
 create index if not exists social_proofs_device_assignment_idx on public.social_post_proofs(device_id, assignment_remote_id);
 
--- Prototype option: keep RLS disabled while testing with an anon key.
--- Production option: enable RLS and bind rows to auth.uid() instead of device_id.
+-- Single-owner RLS setup.
+-- Create one Supabase Auth user in Authentication > Users:
+-- email: xiaoJieApril@learning-app.local
+-- password: keep it only in local.properties as SUPABASE_AUTH_PASSWORD
+--
+-- The Android app signs in with SUPABASE_AUTH_EMAIL/SUPABASE_AUTH_PASSWORD,
+-- then all synced rows are owned by auth.uid(). The old device_id remains for
+-- local prototype grouping, but RLS security is based on the authenticated user.
+
+alter table public.chat_messages add column if not exists user_id uuid default auth.uid();
+alter table public.learning_tasks add column if not exists user_id uuid default auth.uid();
+alter table public.schedule_items add column if not exists user_id uuid default auth.uid();
+alter table public.homework_submissions add column if not exists user_id uuid default auth.uid();
+alter table public.focus_sessions add column if not exists user_id uuid default auth.uid();
+alter table public.homework_drafts add column if not exists user_id uuid default auth.uid();
+alter table public.user_profiles add column if not exists user_id uuid default auth.uid();
+alter table public.availability_rules add column if not exists user_id uuid default auth.uid();
+alter table public.availability_exceptions add column if not exists user_id uuid default auth.uid();
+alter table public.social_publishing_assignments add column if not exists user_id uuid default auth.uid();
+alter table public.social_post_proofs add column if not exists user_id uuid default auth.uid();
+
+alter table public.chat_messages enable row level security;
+alter table public.learning_tasks enable row level security;
+alter table public.schedule_items enable row level security;
+alter table public.homework_submissions enable row level security;
+alter table public.focus_sessions enable row level security;
+alter table public.homework_drafts enable row level security;
+alter table public.user_profiles enable row level security;
+alter table public.availability_rules enable row level security;
+alter table public.availability_exceptions enable row level security;
+alter table public.social_publishing_assignments enable row level security;
+alter table public.social_post_proofs enable row level security;
+
+drop policy if exists "prototype anon access" on public.chat_messages;
+drop policy if exists "single owner access" on public.chat_messages;
+create policy "single owner access" on public.chat_messages for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.learning_tasks;
+drop policy if exists "single owner access" on public.learning_tasks;
+create policy "single owner access" on public.learning_tasks for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.schedule_items;
+drop policy if exists "single owner access" on public.schedule_items;
+create policy "single owner access" on public.schedule_items for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.homework_submissions;
+drop policy if exists "single owner access" on public.homework_submissions;
+create policy "single owner access" on public.homework_submissions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.focus_sessions;
+drop policy if exists "single owner access" on public.focus_sessions;
+create policy "single owner access" on public.focus_sessions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.homework_drafts;
+drop policy if exists "single owner access" on public.homework_drafts;
+create policy "single owner access" on public.homework_drafts for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.user_profiles;
+drop policy if exists "single owner access" on public.user_profiles;
+create policy "single owner access" on public.user_profiles for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.availability_rules;
+drop policy if exists "single owner access" on public.availability_rules;
+create policy "single owner access" on public.availability_rules for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.availability_exceptions;
+drop policy if exists "single owner access" on public.availability_exceptions;
+create policy "single owner access" on public.availability_exceptions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.social_publishing_assignments;
+drop policy if exists "single owner access" on public.social_publishing_assignments;
+create policy "single owner access" on public.social_publishing_assignments for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.social_post_proofs;
+drop policy if exists "single owner access" on public.social_post_proofs;
+create policy "single owner access" on public.social_post_proofs for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());

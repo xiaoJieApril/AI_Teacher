@@ -12,8 +12,11 @@ class SupabaseSyncClient(
     private val deviceId: String,
     private val supabaseUrl: String = BuildConfig.SUPABASE_URL,
     private val anonKey: String = BuildConfig.SUPABASE_ANON_KEY,
+    private val authEmail: String = BuildConfig.SUPABASE_AUTH_EMAIL,
+    private val authPassword: String = BuildConfig.SUPABASE_AUTH_PASSWORD,
 ) {
     private val enabled: Boolean = supabaseUrl.isNotBlank() && anonKey.isNotBlank()
+    private var accessToken: String? = null
 
     suspend fun upsert(table: String, payload: JSONObject): Result<Unit> = runRemote {
         val body = JSONObject(payload.toString()).put("device_id", deviceId)
@@ -53,6 +56,7 @@ class SupabaseSyncClient(
         if (!enabled) return Result.success(Unit)
         return withContext(Dispatchers.IO) {
             try {
+                ensureAuthenticated()
                 block()
                 Result.success(Unit)
             } catch (error: Throwable) {
@@ -66,10 +70,35 @@ class SupabaseSyncClient(
         return (URL("$base/rest/v1/$path").openConnection() as HttpURLConnection).apply {
             requestMethod = method
             setRequestProperty("apikey", anonKey)
-            setRequestProperty("Authorization", "Bearer $anonKey")
+            setRequestProperty("Authorization", "Bearer ${accessToken ?: anonKey}")
             connectTimeout = 10_000
             readTimeout = 15_000
         }
+    }
+
+    private fun ensureAuthenticated() {
+        if (accessToken != null) return
+        // Local-only prototypes can still sync with anon access while final RLS uses the owner token.
+        if (authEmail.isBlank() || authPassword.isBlank()) return
+        val base = supabaseUrl.trimEnd('/')
+        val connection = (URL("$base/auth/v1/token?grant_type=password").openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            setRequestProperty("apikey", anonKey)
+            setRequestProperty("Content-Type", "application/json")
+            connectTimeout = 10_000
+            readTimeout = 15_000
+            doOutput = true
+        }
+        val body = JSONObject()
+            .put("email", authEmail)
+            .put("password", authPassword)
+        connection.outputStream.use { it.write(body.toString().toByteArray()) }
+        if (connection.responseCode !in 200..299) {
+            val error = connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            throw IllegalStateException("Supabase auth ${connection.responseCode}: $error")
+        }
+        val response = connection.inputStream.bufferedReader().use { it.readText() }
+        accessToken = JSONObject(response).optString("access_token").takeIf { it.isNotBlank() }
     }
 
     private fun requireSuccess(connection: HttpURLConnection) {

@@ -1,3 +1,5 @@
 GEMINI_API_KEY=replace_with_your_key
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=replace_with_your_anon_key
+SUPABASE_AUTH_EMAIL=xiaoJieApril@learning-app.local
+SUPABASE_AUTH_PASSWORD=replace_with_your_private_password
