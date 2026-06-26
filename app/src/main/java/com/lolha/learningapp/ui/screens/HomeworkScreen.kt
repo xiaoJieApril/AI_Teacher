@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import com.lolha.learningapp.data.local.HomeworkDraftEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.ErrorText
 import com.lolha.learningapp.ui.components.TeacherThinkingCard
@@ -42,7 +46,7 @@ fun HomeworkScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(CompactPagePadding),
         ) {
             EmptyState(
                 title = "No homework open",
@@ -55,18 +59,18 @@ fun HomeworkScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(CompactPagePadding),
+        verticalArrangement = Arrangement.spacedBy(CompactListGap),
     ) {
-        Text(activeDraft.title, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+        Text(activeDraft.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Text("${activeDraft.subject} · ${activeDraft.status}")
         Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(CompactCardPadding)) {
                 Text("Task", fontWeight = FontWeight.Bold)
                 Text(activeDraft.prompt)
                 if (activeDraft.completionStandard.isNotBlank()) {
-                    Spacer(Modifier.height(10.dp))
-                    Text("Completion", fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Completion", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Text(activeDraft.completionStandard)
                 }
             }
@@ -90,18 +94,17 @@ fun HomeworkScreen(
             OutlinedButton(
                 onClick = onSaveDraft,
                 enabled = !aiRequestState.isThinking,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(CompactButtonHeight),
             ) {
                 Text("Save Draft")
             }
             Button(
                 onClick = onSubmitDraft,
                 enabled = !aiRequestState.isThinking && draftText.isNotBlank(),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(CompactButtonHeight),
             ) {
                 Text("Submit to AI")
             }
         }
     }
 }
-

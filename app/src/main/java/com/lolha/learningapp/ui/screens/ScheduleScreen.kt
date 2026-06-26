@@ -28,7 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.ScheduleItemEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
+import com.lolha.learningapp.ui.components.RecommendedMaterials
 import com.lolha.learningapp.ui.components.TeacherThinkingCard
 import com.lolha.learningapp.ui.state.MainUiState
 import com.lolha.learningapp.ui.state.ScheduleMode
@@ -45,6 +50,7 @@ fun ScheduleScreen(
     onDelete: (String) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
     onHomework: (ScheduleItemEntity) -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
     val today = LocalDate.now().toString()
     val visibleItems = when (state.scheduleMode) {
@@ -52,8 +58,8 @@ fun ScheduleScreen(
         ScheduleMode.Week -> state.scheduleItems
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = Modifier.padding(CompactPagePadding)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(CompactListGap)) {
             ScheduleModeButton(
                 label = "Today",
                 selected = state.scheduleMode == ScheduleMode.Today,
@@ -68,20 +74,28 @@ fun ScheduleScreen(
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(CompactListGap))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onDailySchedule, enabled = !state.loading, modifier = Modifier.weight(1f)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(CompactListGap)) {
+            OutlinedButton(
+                onClick = onDailySchedule,
+                enabled = !state.loading,
+                modifier = Modifier.weight(1f).height(CompactButtonHeight),
+            ) {
                 Text("Generate Today")
             }
-            OutlinedButton(onClick = onWeeklySchedule, enabled = !state.loading, modifier = Modifier.weight(1f)) {
+            OutlinedButton(
+                onClick = onWeeklySchedule,
+                enabled = !state.loading,
+                modifier = Modifier.weight(1f).height(CompactButtonHeight),
+            ) {
                 Text("Generate Week")
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(CompactListGap))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(CompactListGap)) {
             state.aiRequestState.thinkingMessageOrNull()?.let { message ->
                 item {
                     TeacherThinkingCard(message)
@@ -98,7 +112,7 @@ fun ScheduleScreen(
 
             visibleItems.groupBy { it.date }.forEach { (date, itemsForDate) ->
                 item {
-                    Text(date, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(date, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
                 items(itemsForDate) { item ->
                     ScheduleCard(
@@ -108,6 +122,7 @@ fun ScheduleScreen(
                         onDelete = onDelete,
                         onFocus = onFocus,
                         onHomework = onHomework,
+                        onOpenUrl = onOpenUrl,
                     )
                 }
             }
@@ -141,14 +156,15 @@ private fun ScheduleCard(
     onDelete: (String) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
     onHomework: (ScheduleItemEntity) -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(CompactCardPadding)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("${item.startTime}-${item.endTime}", fontWeight = FontWeight.Bold)
-                    Text(item.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("${item.subject} · ${item.suggestedMinutes} min · ${item.status}")
+                    Text(item.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("${item.subject} · ${item.suggestedMinutes} min · ${item.status}", fontSize = 12.sp)
                 }
                 if (item.status != "done") {
                     IconButton(onClick = { onDone(item) }, enabled = !busy) {
@@ -159,22 +175,23 @@ private fun ScheduleCard(
                     Icon(Icons.Default.Delete, contentDescription = "Delete schedule")
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(item.description)
             if (item.completionStandard.isNotBlank()) {
-                Spacer(Modifier.height(10.dp))
-                Text("Completion", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text("Completion", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 Text(item.completionStandard)
             }
-            Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RecommendedMaterials(subject = item.subject, onOpenUrl = onOpenUrl)
+            Spacer(Modifier.height(CompactListGap))
+            Row(horizontalArrangement = Arrangement.spacedBy(CompactListGap)) {
                 if (item.requiresFocusTimer) {
-                    Button(onClick = { onFocus(item) }, enabled = !busy) {
+                    Button(onClick = { onFocus(item) }, enabled = !busy, modifier = Modifier.height(CompactButtonHeight)) {
                         Icon(Icons.Default.PlayArrow, contentDescription = null)
                         Text(" Start")
                     }
                 }
-                OutlinedButton(onClick = { onHomework(item) }, enabled = !busy) {
+                OutlinedButton(onClick = { onHomework(item) }, enabled = !busy, modifier = Modifier.height(CompactButtonHeight)) {
                     Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null)
                     Text(" Homework")
                 }
@@ -182,4 +199,3 @@ private fun ScheduleCard(
         }
     }
 }
-

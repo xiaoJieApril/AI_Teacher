@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lolha.learningapp.data.local.HomeworkSubmissionEntity
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.FeedbackSection
 
@@ -25,8 +28,8 @@ fun JournalScreen(submissions: List<HomeworkSubmissionEntity>) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(CompactPagePadding),
+        verticalArrangement = Arrangement.spacedBy(CompactListGap),
     ) {
         if (submissions.isEmpty()) {
             item {
@@ -38,9 +41,9 @@ fun JournalScreen(submissions: List<HomeworkSubmissionEntity>) {
         }
         items(submissions) { submission ->
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(CompactCardPadding)) {
                     Text("${submission.subject} · Score ${submission.score}", fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(submission.feedback)
                     FeedbackSection("Strengths", submission.strengths)
                     FeedbackSection("Problems", submission.problems)
@@ -51,4 +54,3 @@ fun JournalScreen(submissions: List<HomeworkSubmissionEntity>) {
         }
     }
 }
-

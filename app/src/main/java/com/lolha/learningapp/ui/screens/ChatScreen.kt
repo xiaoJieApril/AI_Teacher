@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -36,6 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.ChatMessageEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.ErrorText
 import com.lolha.learningapp.ui.components.SyncWarningText
@@ -65,13 +71,11 @@ fun ChatScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.padding(16.dp),
-    ) {
+    Column(modifier = Modifier.padding(CompactPagePadding)) {
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(CompactListGap),
         ) {
             if (state.messages.isEmpty() && !state.loading) {
                 item {
@@ -92,10 +96,10 @@ fun ChatScreen(
         }
 
         state.error?.let {
-            ErrorText(it, modifier = Modifier.padding(bottom = 8.dp))
+            ErrorText(it, modifier = Modifier.padding(bottom = CompactListGap))
         }
         state.syncError?.let {
-            SyncWarningText(it, modifier = Modifier.padding(bottom = 8.dp))
+            SyncWarningText(it, modifier = Modifier.padding(bottom = CompactListGap))
         }
 
         state.attachmentLabel?.let { label ->
@@ -111,35 +115,36 @@ fun ChatScreen(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onDailyTask, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(CompactListGap),
+        ) {
+            OutlinedButton(onClick = onDailyTask, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = "Daily task")
+                Text(" Task")
             }
-            OutlinedButton(onClick = onPickImage, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+            OutlinedButton(onClick = onDailySchedule, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
+                Text("Today")
+            }
+            OutlinedButton(onClick = onWeeklySchedule, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
+                Text("Week")
+            }
+            OutlinedButton(onClick = onPickImage, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.Image, contentDescription = "Attach image")
             }
-            OutlinedButton(onClick = onTakePhoto, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+            OutlinedButton(onClick = onTakePhoto, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.CameraAlt, contentDescription = "Take photo")
             }
-            OutlinedButton(onClick = onClearChat, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+            OutlinedButton(onClick = onClearChat, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.Delete, contentDescription = "Clear chat")
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(CompactListGap))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = onDailySchedule, enabled = !state.loading, modifier = Modifier.height(48.dp)) {
-                Text("Today")
-            }
-            OutlinedButton(onClick = onWeeklySchedule, enabled = !state.loading, modifier = Modifier.height(48.dp)) {
-                Text("Week")
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(CompactListGap)) {
             OutlinedTextField(
                 value = state.input,
                 onValueChange = onInputChanged,
@@ -148,10 +153,10 @@ fun ChatScreen(
                 placeholder = { Text("Submit work or ask the teacher") },
                 singleLine = true,
             )
-            OutlinedButton(onClick = onSpeechInput, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+            OutlinedButton(onClick = onSpeechInput, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.Mic, contentDescription = "Speech input")
             }
-            Button(onClick = onSend, enabled = !state.loading, modifier = Modifier.height(56.dp)) {
+            Button(onClick = onSend, enabled = !state.loading, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
             }
         }
@@ -171,7 +176,7 @@ private fun ChatBubble(message: ChatMessageEntity, onDelete: (String) -> Unit) {
             ),
             modifier = Modifier.fillMaxWidth(0.86f),
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(CompactCardPadding)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         if (isTeacher) "Teacher" else "You",
@@ -194,4 +199,3 @@ private fun ChatBubble(message: ChatMessageEntity, onDelete: (String) -> Unit) {
         }
     }
 }
-

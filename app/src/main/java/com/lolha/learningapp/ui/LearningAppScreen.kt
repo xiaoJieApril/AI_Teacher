@@ -3,8 +3,10 @@ package com.lolha.learningapp.ui
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +34,8 @@ import com.lolha.learningapp.ui.screens.ChatScreen
 import com.lolha.learningapp.ui.screens.FocusScreen
 import com.lolha.learningapp.ui.screens.HomeworkScreen
 import com.lolha.learningapp.ui.screens.JournalScreen
+import com.lolha.learningapp.ui.screens.MaterialsScreen
+import com.lolha.learningapp.ui.screens.MoreScreen
 import com.lolha.learningapp.ui.screens.ProfileScreen
 import com.lolha.learningapp.ui.screens.ScheduleScreen
 import com.lolha.learningapp.ui.screens.SocialScreen
@@ -90,7 +94,11 @@ fun LearningAppScreen(
     onFocusMinutesChanged: (Int) -> Unit,
     onStartFocus: () -> Unit,
     onStopFocus: () -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
+    val primaryTabs = listOf(AppTab.Chat, AppTab.Schedule, AppTab.Tasks, AppTab.Homework, AppTab.More)
+    val selectedBottomTab = if (state.selectedTab in primaryTabs.dropLast(1)) state.selectedTab else AppTab.More
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,9 +117,9 @@ fun LearningAppScreen(
         },
         bottomBar = {
             NavigationBar {
-                AppTab.entries.forEach { tab ->
+                primaryTabs.forEach { tab ->
                     NavigationBarItem(
-                        selected = state.selectedTab == tab,
+                        selected = selectedBottomTab == tab,
                         onClick = { onTabSelected(tab) },
                         icon = { Icon(tab.icon, contentDescription = tab.label) },
                         label = { Text(tab.label) },
@@ -150,8 +158,9 @@ fun LearningAppScreen(
                     onDelete = onScheduleDelete,
                     onFocus = onScheduleFocus,
                     onHomework = onScheduleHomework,
+                    onOpenUrl = onOpenUrl,
                 )
-                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone, onTaskHomework)
+                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone, onTaskHomework, onOpenUrl)
                 AppTab.Homework -> HomeworkScreen(
                     activeDraft = state.activeDraft,
                     draftText = state.draftText,
@@ -190,6 +199,11 @@ fun LearningAppScreen(
                     onProofInputChanged = onProofInputChanged,
                     onSubmitProof = onSubmitProof,
                 )
+                AppTab.Materials -> MaterialsScreen(onOpenUrl = onOpenUrl)
+                AppTab.More -> MoreScreen(
+                    selectedTab = state.selectedTab,
+                    onTabSelected = onTabSelected,
+                )
             }
         }
     }
@@ -205,6 +219,8 @@ private val AppTab.label: String
         AppTab.Journal -> "Journal"
         AppTab.Profile -> "Profile"
         AppTab.Social -> "Social"
+        AppTab.Materials -> "Materials"
+        AppTab.More -> "More"
     }
 
 private val AppTab.icon: ImageVector
@@ -217,5 +233,6 @@ private val AppTab.icon: ImageVector
         AppTab.Journal -> Icons.Default.History
         AppTab.Profile -> Icons.Default.Person
         AppTab.Social -> Icons.Default.Image
+        AppTab.Materials -> Icons.AutoMirrored.Filled.MenuBook
+        AppTab.More -> Icons.Default.MoreHoriz
     }
-

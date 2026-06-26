@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.lolha.learningapp.ui.components.CompactButtonHeight
 import com.lolha.learningapp.ui.components.formatSeconds
 import com.lolha.learningapp.ui.state.MainUiState
 import kotlin.math.roundToInt
@@ -36,15 +37,15 @@ fun FocusScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(16.dp))
-        Text(formatSeconds(state.remainingSeconds), fontSize = 56.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
+        Text(formatSeconds(state.remainingSeconds), fontSize = 48.sp, fontWeight = FontWeight.Bold)
         Text("Focus session with Android screen pinning")
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(18.dp))
         Text("${state.focusMinutes} minutes", fontWeight = FontWeight.Bold)
         Slider(
             value = state.focusMinutes.toFloat(),
@@ -53,18 +54,17 @@ fun FocusScreen(
             steps = 34,
             enabled = !state.focusRunning,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         if (state.focusRunning) {
-            Button(onClick = onStop) {
+            Button(onClick = onStop, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.Stop, contentDescription = null)
                 Text(" Stop")
             }
         } else {
-            Button(onClick = onStart) {
+            Button(onClick = onStart, modifier = Modifier.height(CompactButtonHeight)) {
                 Icon(Icons.Default.PlayArrow, contentDescription = null)
                 Text(" Start focus")
             }
         }
     }
 }
-

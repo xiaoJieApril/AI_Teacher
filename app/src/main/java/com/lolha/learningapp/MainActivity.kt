@@ -101,9 +101,14 @@ class MainActivity : ComponentActivity() {
                         viewModel.startFocus()
                     },
                     onStopFocus = viewModel::stopFocus,
+                    onOpenUrl = ::openUrl,
                 )
             }
         }
+    }
+
+    private fun openUrl(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
     private fun requestScreenPinning() {
@@ -130,4 +135,3 @@ class MainActivity : ComponentActivity() {
         viewModel.attachImage(base64, "image/jpeg", "Camera homework attached")
     }
 }
-

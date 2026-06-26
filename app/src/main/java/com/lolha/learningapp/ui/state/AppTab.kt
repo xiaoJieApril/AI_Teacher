@@ -9,5 +9,6 @@ enum class AppTab {
     Journal,
     Profile,
     Social,
+    Materials,
+    More,
 }
-

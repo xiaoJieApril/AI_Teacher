@@ -26,19 +26,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.LearningTaskEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
+import com.lolha.learningapp.ui.components.RecommendedMaterials
 
 @Composable
 fun TasksScreen(
     tasks: List<LearningTaskEntity>,
     onTaskDone: (Long) -> Unit,
     onTaskHomework: (LearningTaskEntity) -> Unit,
+    onOpenUrl: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(CompactPagePadding),
+        verticalArrangement = Arrangement.spacedBy(CompactListGap),
     ) {
         if (tasks.isEmpty()) {
             item {
@@ -50,11 +56,11 @@ fun TasksScreen(
         }
         items(tasks) { task ->
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(CompactCardPadding)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(task.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text("${task.subject} · ${task.suggestedMinutes} min · ${task.status}")
+                            Text(task.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text("${task.subject} · ${task.suggestedMinutes} min · ${task.status}", fontSize = 12.sp)
                         }
                         if (task.status != "done") {
                             IconButton(onClick = { onTaskDone(task.id) }) {
@@ -62,20 +68,21 @@ fun TasksScreen(
                             }
                         }
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(task.description)
                     if (task.completionStandard.isNotBlank()) {
-                        Spacer(Modifier.height(10.dp))
-                        Text("Completion", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Completion", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text(task.completionStandard)
                     }
                     if (task.nextActionInstruction.isNotBlank()) {
-                        Spacer(Modifier.height(10.dp))
-                        Text("Next", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Next", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         Text(task.nextActionInstruction)
                     }
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedButton(onClick = { onTaskHomework(task) }) {
+                    RecommendedMaterials(subject = task.subject, onOpenUrl = onOpenUrl)
+                    Spacer(Modifier.height(CompactListGap))
+                    OutlinedButton(onClick = { onTaskHomework(task) }, modifier = Modifier.height(CompactButtonHeight)) {
                         Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null)
                         Text(" Homework")
                     }
@@ -84,4 +91,3 @@ fun TasksScreen(
         }
     }
 }
-

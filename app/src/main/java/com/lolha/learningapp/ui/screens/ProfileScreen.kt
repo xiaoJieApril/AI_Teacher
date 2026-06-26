@@ -3,6 +3,7 @@ package com.lolha.learningapp.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,8 +26,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.AvailabilityExceptionEntity
 import com.lolha.learningapp.data.local.AvailabilityRuleEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactDropdownField
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.ErrorText
 import com.lolha.learningapp.ui.state.MainUiState
+
+private val WeekdayOptions = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+private val AvailabilityTypeOptions = listOf("work", "unavailable", "preferred")
+private val TimeOptions = List(48) { index ->
+    "%02d:%02d".format(index / 2, if (index % 2 == 0) 0 else 30)
+}
 
 @Composable
 fun ProfileScreen(
@@ -51,8 +63,8 @@ fun ProfileScreen(
     onDeleteException: (String) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(CompactPagePadding),
+        verticalArrangement = Arrangement.spacedBy(CompactListGap),
     ) {
         state.error?.let { error ->
             item {
@@ -61,8 +73,8 @@ fun ProfileScreen(
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Profile", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Column(modifier = Modifier.padding(CompactCardPadding), verticalArrangement = Arrangement.spacedBy(CompactListGap)) {
+                    Text("Profile", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     OutlinedTextField(
                         value = state.profileNickname,
                         onValueChange = onNicknameChanged,
@@ -83,7 +95,7 @@ fun ProfileScreen(
                         label = { Text("Timezone") },
                         singleLine = true,
                     )
-                    Button(onClick = onSaveProfile) {
+                    Button(onClick = onSaveProfile, modifier = Modifier.height(CompactButtonHeight)) {
                         Text("Save Profile")
                     }
                 }
@@ -92,39 +104,39 @@ fun ProfileScreen(
 
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Weekly Availability", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Column(modifier = Modifier.padding(CompactCardPadding), verticalArrangement = Arrangement.spacedBy(CompactListGap)) {
+                    Text("Weekly Availability", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text("work = No tasks allowed", color = Color(0xFFB45309), fontWeight = FontWeight.Bold)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.ruleWeekday,
-                            onValueChange = onRuleWeekdayChanged,
+                            options = WeekdayOptions,
+                            onValueSelected = onRuleWeekdayChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("Day") },
-                            singleLine = true,
+                            label = "Day",
                         )
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.ruleType,
-                            onValueChange = onRuleTypeChanged,
+                            options = AvailabilityTypeOptions,
+                            onValueSelected = onRuleTypeChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("Type") },
-                            singleLine = true,
+                            label = "Type",
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.ruleStartTime,
-                            onValueChange = onRuleStartChanged,
+                            options = TimeOptions,
+                            onValueSelected = onRuleStartChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("Start") },
-                            singleLine = true,
+                            label = "Start",
                         )
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.ruleEndTime,
-                            onValueChange = onRuleEndChanged,
+                            options = TimeOptions,
+                            onValueSelected = onRuleEndChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("End") },
-                            singleLine = true,
+                            label = "End",
                         )
                     }
                     OutlinedTextField(
@@ -134,7 +146,7 @@ fun ProfileScreen(
                         label = { Text("Label") },
                         singleLine = true,
                     )
-                    Button(onClick = onAddRule) {
+                    Button(onClick = onAddRule, modifier = Modifier.height(CompactButtonHeight)) {
                         Text("Add Weekly Rule")
                     }
                 }
@@ -147,8 +159,8 @@ fun ProfileScreen(
 
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Special Date", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Column(modifier = Modifier.padding(CompactCardPadding), verticalArrangement = Arrangement.spacedBy(CompactListGap)) {
+                    Text("Special Date", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = state.exceptionDate,
@@ -157,28 +169,28 @@ fun ProfileScreen(
                             label = { Text("YYYY-MM-DD") },
                             singleLine = true,
                         )
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.exceptionType,
-                            onValueChange = onExceptionTypeChanged,
+                            options = AvailabilityTypeOptions,
+                            onValueSelected = onExceptionTypeChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("Type") },
-                            singleLine = true,
+                            label = "Type",
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.exceptionStartTime,
-                            onValueChange = onExceptionStartChanged,
+                            options = TimeOptions,
+                            onValueSelected = onExceptionStartChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("Start") },
-                            singleLine = true,
+                            label = "Start",
                         )
-                        OutlinedTextField(
+                        CompactDropdownField(
                             value = state.exceptionEndTime,
-                            onValueChange = onExceptionEndChanged,
+                            options = TimeOptions,
+                            onValueSelected = onExceptionEndChanged,
                             modifier = Modifier.weight(1f),
-                            label = { Text("End") },
-                            singleLine = true,
+                            label = "End",
                         )
                     }
                     OutlinedTextField(
@@ -188,7 +200,7 @@ fun ProfileScreen(
                         label = { Text("Label") },
                         singleLine = true,
                     )
-                    Button(onClick = onAddException) {
+                    Button(onClick = onAddException, modifier = Modifier.height(CompactButtonHeight)) {
                         Text("Add Special Date")
                     }
                 }
@@ -205,7 +217,7 @@ fun ProfileScreen(
 private fun AvailabilityRuleRow(rule: AvailabilityRuleEntity, onDelete: (String) -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(CompactCardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -223,7 +235,7 @@ private fun AvailabilityRuleRow(rule: AvailabilityRuleEntity, onDelete: (String)
 private fun AvailabilityExceptionRow(exception: AvailabilityExceptionEntity, onDelete: (String) -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(CompactCardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -236,4 +248,3 @@ private fun AvailabilityExceptionRow(exception: AvailabilityExceptionEntity, onD
         }
     }
 }
-

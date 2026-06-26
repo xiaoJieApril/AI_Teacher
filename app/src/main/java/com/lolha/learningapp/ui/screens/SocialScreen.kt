@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lolha.learningapp.data.local.SocialPostProofEntity
 import com.lolha.learningapp.data.local.SocialPublishingAssignmentEntity
+import com.lolha.learningapp.ui.components.CompactButtonHeight
+import com.lolha.learningapp.ui.components.CompactCardPadding
+import com.lolha.learningapp.ui.components.CompactListGap
+import com.lolha.learningapp.ui.components.CompactPagePadding
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.ErrorText
 import com.lolha.learningapp.ui.components.TeacherThinkingCard
@@ -41,11 +45,15 @@ fun SocialScreen(
     onSubmitProof: (SocialPublishingAssignmentEntity, String) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(CompactPagePadding),
+        verticalArrangement = Arrangement.spacedBy(CompactListGap),
     ) {
         item {
-            Button(onClick = onCreateAssignment, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = onCreateAssignment,
+                enabled = !state.loading,
+                modifier = Modifier.fillMaxWidth().height(CompactButtonHeight),
+            ) {
                 Icon(Icons.Default.Image, contentDescription = null)
                 Text(" Create Monthly Art Assignment")
             }
@@ -87,8 +95,8 @@ private fun SocialAssignmentCard(
     onSubmitProof: (SocialPublishingAssignmentEntity, String) -> Unit,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = Color.White)) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(assignment.title, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        Column(modifier = Modifier.padding(CompactCardPadding), verticalArrangement = Arrangement.spacedBy(CompactListGap)) {
+            Text(assignment.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             Text("Due ${assignment.dueDate} · ${assignment.status}")
             Text(assignment.description)
             if (assignment.artworkNotes.isNotBlank()) {
@@ -108,6 +116,7 @@ private fun SocialAssignmentCard(
                     Button(
                         onClick = { onSubmitProof(assignment, platform) },
                         enabled = !busy && proofInputs[key].orEmpty().isNotBlank(),
+                        modifier = Modifier.height(CompactButtonHeight),
                     ) {
                         Text("Submit")
                     }
@@ -115,11 +124,11 @@ private fun SocialAssignmentCard(
             }
             proofs.forEach { proof ->
                 Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC))) {
-                    Column(modifier = Modifier.padding(12.dp)) {
+                    Column(modifier = Modifier.padding(CompactCardPadding)) {
                         Text("${proof.platform} · ${proof.verificationStatus}", fontWeight = FontWeight.Bold)
                         Text(proof.url)
                         if (proof.aiFeedback.isNotBlank()) {
-                            Spacer(Modifier.height(6.dp))
+                            Spacer(Modifier.height(4.dp))
                             Text(proof.aiFeedback)
                         }
                     }
@@ -128,4 +137,3 @@ private fun SocialAssignmentCard(
         }
     }
 }
-
