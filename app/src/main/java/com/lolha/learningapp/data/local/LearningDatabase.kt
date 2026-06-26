@@ -18,8 +18,9 @@ import androidx.room.RoomDatabase
         AvailabilityExceptionEntity::class,
         SocialPublishingAssignmentEntity::class,
         SocialPostProofEntity::class,
+        DeletionAuditEntity::class,
     ],
-    version = 5,
+    version = 6,
 )
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun learningDao(): LearningDao

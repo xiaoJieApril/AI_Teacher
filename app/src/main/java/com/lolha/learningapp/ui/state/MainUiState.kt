@@ -3,6 +3,7 @@ package com.lolha.learningapp.ui.state
 import com.lolha.learningapp.data.local.AvailabilityExceptionEntity
 import com.lolha.learningapp.data.local.AvailabilityRuleEntity
 import com.lolha.learningapp.data.local.ChatMessageEntity
+import com.lolha.learningapp.data.local.DeletionAuditEntity
 import com.lolha.learningapp.data.local.HomeworkDraftEntity
 import com.lolha.learningapp.data.local.HomeworkSubmissionEntity
 import com.lolha.learningapp.data.local.LearningTaskEntity
@@ -26,6 +27,7 @@ data class MainUiState(
     val availabilityExceptions: List<AvailabilityExceptionEntity> = emptyList(),
     val socialAssignments: List<SocialPublishingAssignmentEntity> = emptyList(),
     val socialProofs: List<SocialPostProofEntity> = emptyList(),
+    val deletionAudits: List<DeletionAuditEntity> = emptyList(),
     val profileNickname: String = "",
     val profileGoal: String = "",
     val profileTimezone: String = "Asia/Kuala_Lumpur",
@@ -54,4 +56,3 @@ data class MainUiState(
 }
 
 fun proofKey(assignmentRemoteId: String, platform: String): String = "$assignmentRemoteId:$platform"
-

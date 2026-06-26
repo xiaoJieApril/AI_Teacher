@@ -38,11 +38,20 @@ interface LearningDao {
     @Query("SELECT * FROM social_post_proofs ORDER BY submittedAt DESC")
     fun observeSocialProofs(): Flow<List<SocialPostProofEntity>>
 
+    @Query("SELECT * FROM deletion_audits ORDER BY deletedAt DESC")
+    fun observeDeletionAudits(): Flow<List<DeletionAuditEntity>>
+
     @Query("SELECT * FROM schedule_items WHERE date IN (:dates)")
     suspend fun getScheduleItemsForDates(dates: List<String>): List<ScheduleItemEntity>
 
     @Query("SELECT * FROM learning_tasks WHERE id = :taskId LIMIT 1")
     suspend fun getTask(taskId: Long): LearningTaskEntity?
+
+    @Query("SELECT * FROM learning_tasks WHERE sourceType = :sourceType AND sourceRemoteId = :sourceRemoteId")
+    suspend fun getTasksForSource(sourceType: String, sourceRemoteId: String): List<LearningTaskEntity>
+
+    @Query("SELECT * FROM social_publishing_assignments WHERE month = :month AND status = 'active' LIMIT 1")
+    suspend fun getActiveSocialAssignmentForMonth(month: String): SocialPublishingAssignmentEntity?
 
     @Query("SELECT * FROM homework_drafts WHERE sourceType = :sourceType AND sourceRemoteId = :sourceRemoteId LIMIT 1")
     suspend fun getDraftForSource(sourceType: String, sourceRemoteId: String): HomeworkDraftEntity?
@@ -63,6 +72,9 @@ interface LearningDao {
     suspend fun insertTask(task: LearningTaskEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTasks(tasks: List<LearningTaskEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertDraft(draft: HomeworkDraftEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -81,6 +93,9 @@ interface LearningDao {
     suspend fun insertSocialProof(proof: SocialPostProofEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDeletionAudit(audit: DeletionAuditEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertScheduleItems(items: List<ScheduleItemEntity>)
 
     @Query("DELETE FROM schedule_items WHERE date IN (:dates)")
@@ -97,6 +112,9 @@ interface LearningDao {
 
     @Query("DELETE FROM schedule_items WHERE remoteId = :remoteId")
     suspend fun deleteScheduleItem(remoteId: String)
+
+    @Query("DELETE FROM learning_tasks WHERE remoteId = :remoteId")
+    suspend fun deleteTask(remoteId: String)
 
     @Query("DELETE FROM availability_rules WHERE remoteId = :remoteId")
     suspend fun deleteAvailabilityRule(remoteId: String)

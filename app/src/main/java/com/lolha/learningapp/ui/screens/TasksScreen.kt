@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -18,6 +19,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
@@ -30,6 +35,7 @@ import com.lolha.learningapp.ui.components.CompactButtonHeight
 import com.lolha.learningapp.ui.components.CompactCardPadding
 import com.lolha.learningapp.ui.components.CompactListGap
 import com.lolha.learningapp.ui.components.CompactPagePadding
+import com.lolha.learningapp.ui.components.DeleteReasonDialog
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.RecommendedMaterials
 
@@ -38,8 +44,34 @@ fun TasksScreen(
     tasks: List<LearningTaskEntity>,
     onTaskDone: (Long) -> Unit,
     onTaskHomework: (LearningTaskEntity) -> Unit,
+    onTaskDelete: (LearningTaskEntity, String, String) -> Unit,
     onOpenUrl: (String) -> Unit,
 ) {
+    var pendingDelete by remember { mutableStateOf<LearningTaskEntity?>(null) }
+    var reasonCategory by remember { mutableStateOf("") }
+    var reasonDetail by remember { mutableStateOf("") }
+
+    pendingDelete?.let { task ->
+        DeleteReasonDialog(
+            title = "Delete task",
+            reasonCategory = reasonCategory,
+            reasonDetail = reasonDetail,
+            onReasonCategoryChanged = { reasonCategory = it },
+            onReasonDetailChanged = { reasonDetail = it },
+            onDismiss = {
+                pendingDelete = null
+                reasonCategory = ""
+                reasonDetail = ""
+            },
+            onConfirm = {
+                onTaskDelete(task, reasonCategory, reasonDetail.trim())
+                pendingDelete = null
+                reasonCategory = ""
+                reasonDetail = ""
+            },
+        )
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -66,6 +98,9 @@ fun TasksScreen(
                             IconButton(onClick = { onTaskDone(task.id) }) {
                                 Icon(Icons.Default.Check, contentDescription = "Mark done")
                             }
+                        }
+                        IconButton(onClick = { pendingDelete = task }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete task")
                         }
                     }
                     Spacer(Modifier.height(4.dp))

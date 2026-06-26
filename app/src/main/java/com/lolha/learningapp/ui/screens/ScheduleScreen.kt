@@ -21,6 +21,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +36,7 @@ import com.lolha.learningapp.ui.components.CompactButtonHeight
 import com.lolha.learningapp.ui.components.CompactCardPadding
 import com.lolha.learningapp.ui.components.CompactListGap
 import com.lolha.learningapp.ui.components.CompactPagePadding
+import com.lolha.learningapp.ui.components.DeleteReasonDialog
 import com.lolha.learningapp.ui.components.EmptyState
 import com.lolha.learningapp.ui.components.RecommendedMaterials
 import com.lolha.learningapp.ui.components.TeacherThinkingCard
@@ -47,7 +52,7 @@ fun ScheduleScreen(
     onDailySchedule: () -> Unit,
     onWeeklySchedule: () -> Unit,
     onDone: (ScheduleItemEntity) -> Unit,
-    onDelete: (String) -> Unit,
+    onDelete: (ScheduleItemEntity, String, String) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
     onHomework: (ScheduleItemEntity) -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -56,6 +61,30 @@ fun ScheduleScreen(
     val visibleItems = when (state.scheduleMode) {
         ScheduleMode.Today -> state.scheduleItems.filter { it.date == today }
         ScheduleMode.Week -> state.scheduleItems
+    }
+    var pendingDelete by remember { mutableStateOf<ScheduleItemEntity?>(null) }
+    var reasonCategory by remember { mutableStateOf("") }
+    var reasonDetail by remember { mutableStateOf("") }
+
+    pendingDelete?.let { item ->
+        DeleteReasonDialog(
+            title = "Delete schedule item",
+            reasonCategory = reasonCategory,
+            reasonDetail = reasonDetail,
+            onReasonCategoryChanged = { reasonCategory = it },
+            onReasonDetailChanged = { reasonDetail = it },
+            onDismiss = {
+                pendingDelete = null
+                reasonCategory = ""
+                reasonDetail = ""
+            },
+            onConfirm = {
+                onDelete(item, reasonCategory, reasonDetail.trim())
+                pendingDelete = null
+                reasonCategory = ""
+                reasonDetail = ""
+            },
+        )
     }
 
     Column(modifier = Modifier.padding(CompactPagePadding)) {
@@ -119,7 +148,7 @@ fun ScheduleScreen(
                         item = item,
                         busy = state.loading,
                         onDone = onDone,
-                        onDelete = onDelete,
+                        onDelete = { deleteItem -> pendingDelete = deleteItem },
                         onFocus = onFocus,
                         onHomework = onHomework,
                         onOpenUrl = onOpenUrl,
@@ -153,7 +182,7 @@ private fun ScheduleCard(
     item: ScheduleItemEntity,
     busy: Boolean,
     onDone: (ScheduleItemEntity) -> Unit,
-    onDelete: (String) -> Unit,
+    onDelete: (ScheduleItemEntity) -> Unit,
     onFocus: (ScheduleItemEntity) -> Unit,
     onHomework: (ScheduleItemEntity) -> Unit,
     onOpenUrl: (String) -> Unit,
@@ -171,7 +200,7 @@ private fun ScheduleCard(
                         Icon(Icons.Default.Check, contentDescription = "Mark done")
                     }
                 }
-                IconButton(onClick = { onDelete(item.remoteId) }, enabled = !busy) {
+                IconButton(onClick = { onDelete(item) }, enabled = !busy) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete schedule")
                 }
             }

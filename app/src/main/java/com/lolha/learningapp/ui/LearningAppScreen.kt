@@ -62,11 +62,12 @@ fun LearningAppScreen(
     onWeeklySchedule: () -> Unit,
     onScheduleModeSelected: (ScheduleMode) -> Unit,
     onScheduleDone: (ScheduleItemEntity) -> Unit,
-    onScheduleDelete: (String) -> Unit,
+    onScheduleDelete: (ScheduleItemEntity, String, String) -> Unit,
     onScheduleFocus: (ScheduleItemEntity) -> Unit,
     onScheduleHomework: (ScheduleItemEntity) -> Unit,
     onTaskDone: (Long) -> Unit,
     onTaskHomework: (LearningTaskEntity) -> Unit,
+    onTaskDelete: (LearningTaskEntity, String, String) -> Unit,
     onDraftTextChanged: (String) -> Unit,
     onSaveDraft: () -> Unit,
     onSubmitDraft: () -> Unit,
@@ -160,7 +161,7 @@ fun LearningAppScreen(
                     onHomework = onScheduleHomework,
                     onOpenUrl = onOpenUrl,
                 )
-                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone, onTaskHomework, onOpenUrl)
+                AppTab.Tasks -> TasksScreen(state.tasks, onTaskDone, onTaskHomework, onTaskDelete, onOpenUrl)
                 AppTab.Homework -> HomeworkScreen(
                     activeDraft = state.activeDraft,
                     draftText = state.draftText,

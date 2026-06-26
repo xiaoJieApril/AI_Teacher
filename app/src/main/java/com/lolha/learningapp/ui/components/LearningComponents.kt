@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -18,6 +20,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -102,6 +105,64 @@ fun formatSeconds(seconds: Int): String {
     val minutes = seconds / 60
     val remaining = seconds % 60
     return "%02d:%02d".format(minutes, remaining)
+}
+
+val DeleteReasonOptions = listOf(
+    "Wrong time",
+    "Too easy",
+    "Too hard",
+    "Duplicate",
+    "No longer needed",
+    "Other",
+)
+
+@Composable
+fun DeleteReasonDialog(
+    title: String,
+    reasonCategory: String,
+    reasonDetail: String,
+    onReasonCategoryChanged: (String) -> Unit,
+    onReasonDetailChanged: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                Text("Please choose why this task is being deleted.", color = Color(0xFF475569))
+                Spacer(Modifier.height(CompactListGap))
+                CompactDropdownField(
+                    value = reasonCategory,
+                    options = DeleteReasonOptions,
+                    label = "Reason",
+                    onValueSelected = onReasonCategoryChanged,
+                )
+                Spacer(Modifier.height(CompactListGap))
+                OutlinedTextField(
+                    value = reasonDetail,
+                    onValueChange = onReasonDetailChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Details") },
+                    minLines = 2,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = reasonCategory.isNotBlank() && reasonDetail.isNotBlank(),
+            ) {
+                Text("Delete")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

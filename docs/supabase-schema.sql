@@ -25,6 +25,8 @@ create table if not exists public.learning_tasks (
   next_action_type text not null default 'none',
   next_action_instruction text not null default '',
   status text not null default 'todo',
+  source_type text,
+  source_remote_id text,
   created_at bigint not null,
   updated_at timestamptz not null default now()
 );
@@ -149,6 +151,18 @@ create table if not exists public.social_post_proofs (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.deletion_audits (
+  remote_id uuid primary key,
+  device_id text not null,
+  item_type text not null,
+  item_remote_id text not null,
+  item_title text not null,
+  reason_category text not null,
+  reason_detail text not null,
+  deleted_at bigint not null,
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists chat_messages_device_idx on public.chat_messages(device_id);
 create index if not exists learning_tasks_device_idx on public.learning_tasks(device_id);
 create index if not exists schedule_items_device_date_idx on public.schedule_items(device_id, date);
@@ -160,6 +174,7 @@ create index if not exists availability_rules_device_idx on public.availability_
 create index if not exists availability_exceptions_device_date_idx on public.availability_exceptions(device_id, date);
 create index if not exists social_assignments_device_idx on public.social_publishing_assignments(device_id);
 create index if not exists social_proofs_device_assignment_idx on public.social_post_proofs(device_id, assignment_remote_id);
+create index if not exists deletion_audits_device_idx on public.deletion_audits(device_id);
 
 -- Single-owner RLS setup.
 -- Create one Supabase Auth user in Authentication > Users:
@@ -181,6 +196,10 @@ alter table public.availability_rules add column if not exists user_id uuid defa
 alter table public.availability_exceptions add column if not exists user_id uuid default auth.uid();
 alter table public.social_publishing_assignments add column if not exists user_id uuid default auth.uid();
 alter table public.social_post_proofs add column if not exists user_id uuid default auth.uid();
+alter table public.deletion_audits add column if not exists user_id uuid default auth.uid();
+
+alter table public.learning_tasks add column if not exists source_type text;
+alter table public.learning_tasks add column if not exists source_remote_id text;
 
 alter table public.chat_messages enable row level security;
 alter table public.learning_tasks enable row level security;
@@ -193,6 +212,7 @@ alter table public.availability_rules enable row level security;
 alter table public.availability_exceptions enable row level security;
 alter table public.social_publishing_assignments enable row level security;
 alter table public.social_post_proofs enable row level security;
+alter table public.deletion_audits enable row level security;
 
 drop policy if exists "prototype anon access" on public.chat_messages;
 drop policy if exists "single owner access" on public.chat_messages;
@@ -237,3 +257,7 @@ create policy "single owner access" on public.social_publishing_assignments for 
 drop policy if exists "prototype anon access" on public.social_post_proofs;
 drop policy if exists "single owner access" on public.social_post_proofs;
 create policy "single owner access" on public.social_post_proofs for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+drop policy if exists "prototype anon access" on public.deletion_audits;
+drop policy if exists "single owner access" on public.deletion_audits;
+create policy "single owner access" on public.deletion_audits for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());

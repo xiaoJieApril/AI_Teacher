@@ -71,6 +71,7 @@ class MainActivity : ComponentActivity() {
                     onScheduleHomework = viewModel::openHomeworkForSchedule,
                     onTaskDone = viewModel::markTaskDone,
                     onTaskHomework = viewModel::openHomeworkForTask,
+                    onTaskDelete = viewModel::deleteLearningTask,
                     onDraftTextChanged = viewModel::updateDraftText,
                     onSaveDraft = viewModel::saveActiveDraft,
                     onSubmitDraft = viewModel::submitActiveDraft,

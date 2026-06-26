@@ -16,6 +16,8 @@ data class LearningTaskEntity(
     val nextActionType: String = "none",
     val nextActionInstruction: String = "",
     val status: String = "todo",
+    val sourceType: String? = null,
+    val sourceRemoteId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
 )
 
@@ -149,4 +151,16 @@ data class SocialPostProofEntity(
     val verificationStatus: String = "pending",
     val aiFeedback: String = "",
     val submittedAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "deletion_audits")
+data class DeletionAuditEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val remoteId: String = UUID.randomUUID().toString(),
+    val itemType: String,
+    val itemRemoteId: String,
+    val itemTitle: String,
+    val reasonCategory: String,
+    val reasonDetail: String,
+    val deletedAt: Long = System.currentTimeMillis(),
 )

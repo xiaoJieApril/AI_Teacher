@@ -96,6 +96,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 uiState.value = uiState.value.copy(socialProofs = proofs)
             }
         }
+        viewModelScope.launch {
+            repository.observeDeletionAudits().collectLatest { audits ->
+                uiState.value = uiState.value.copy(deletionAudits = audits)
+            }
+        }
     }
 
     fun selectTab(tab: AppTab) {
@@ -251,9 +256,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun deleteScheduleItem(remoteId: String) {
+    fun deleteLearningTask(task: LearningTaskEntity, reasonCategory: String, reasonDetail: String) {
         viewModelScope.launch {
-            applySyncResult(repository.deleteScheduleItem(remoteId))
+            applySyncResult(repository.deleteLearningTask(task, reasonCategory, reasonDetail))
+        }
+    }
+
+    fun deleteScheduleItem(item: ScheduleItemEntity, reasonCategory: String, reasonDetail: String) {
+        viewModelScope.launch {
+            applySyncResult(repository.deleteScheduleItem(item, reasonCategory, reasonDetail))
         }
     }
 

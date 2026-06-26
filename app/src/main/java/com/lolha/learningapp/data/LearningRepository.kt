@@ -6,6 +6,7 @@ import com.lolha.learningapp.data.ai.TeacherResponse
 import com.lolha.learningapp.data.local.AvailabilityExceptionEntity
 import com.lolha.learningapp.data.local.AvailabilityRuleEntity
 import com.lolha.learningapp.data.local.ChatMessageEntity
+import com.lolha.learningapp.data.local.DeletionAuditEntity
 import com.lolha.learningapp.data.local.FocusSessionEntity
 import com.lolha.learningapp.data.local.HomeworkDraftEntity
 import com.lolha.learningapp.data.local.HomeworkSubmissionEntity
@@ -49,6 +50,7 @@ class LearningRepository(
     fun observeAvailabilityExceptions(): Flow<List<AvailabilityExceptionEntity>> = dao.observeAvailabilityExceptions()
     fun observeSocialAssignments(): Flow<List<SocialPublishingAssignmentEntity>> = dao.observeSocialAssignments()
     fun observeSocialProofs(): Flow<List<SocialPostProofEntity>> = dao.observeSocialProofs()
+    fun observeDeletionAudits(): Flow<List<DeletionAuditEntity>> = dao.observeDeletionAudits()
 
     suspend fun sendChatMessage(
         visibleMessage: String,
@@ -179,16 +181,28 @@ class LearningRepository(
 
     suspend fun createMonthlySocialAssignment(): RepositoryResult {
         val month = YearMonth.now()
-        val assignment = SocialPublishingAssignmentEntity(
-            title = "${month} 畫畫社群發佈任務",
-            description = "完成一張本月代表作品，發佈到 X/Twitter 與 Pixiv，並回來提交公開作品連結。",
-            month = month.toString(),
-            dueDate = month.atEndOfMonth().toString(),
-            requiredPlatforms = "X,Pixiv",
-            artworkNotes = "AI 老師可將本任務拆成草稿、線稿、上色、發佈與 proof 驗證階段。",
-        )
-        dao.insertSocialAssignment(assignment)
-        return RepositoryResult(syncSocialAssignment(assignment))
+        val monthValue = month.toString()
+        val dueDate = month.atEndOfMonth().toString()
+        val assignment = dao.getActiveSocialAssignmentForMonth(monthValue)
+            ?: SocialPublishingAssignmentEntity(
+                title = "${month} 畫畫社群發佈任務",
+                description = "完成一張本月代表作品，發佈到 X/Twitter 與 Pixiv，並回來提交公開作品連結。",
+                month = monthValue,
+                dueDate = dueDate,
+                requiredPlatforms = "X,Pixiv",
+                artworkNotes = "本任務會拆成草稿、線稿、上色、完成修整、發佈與 proof 驗證階段。",
+            ).also { dao.insertSocialAssignment(it) }
+
+        var syncError = syncSocialAssignment(assignment)
+        val existingPhaseTasks = dao.getTasksForSource("social_assignment", assignment.remoteId)
+        if (existingPhaseTasks.isEmpty()) {
+            val phaseTasks = monthlyArtPhaseTasks(assignment, dueDate)
+            dao.insertTasks(phaseTasks)
+            phaseTasks.forEach { task ->
+                syncError = syncError.combine(syncTask(task))
+            }
+        }
+        return RepositoryResult(syncError)
     }
 
     suspend fun submitSocialProof(
@@ -240,9 +254,38 @@ class LearningRepository(
         )
     }
 
-    suspend fun deleteScheduleItem(remoteId: String): RepositoryResult {
-        dao.deleteScheduleItem(remoteId)
-        return RepositoryResult(syncDelete("schedule_items", remoteId))
+    suspend fun deleteLearningTask(
+        task: LearningTaskEntity,
+        reasonCategory: String,
+        reasonDetail: String,
+    ): RepositoryResult {
+        var syncError = auditDeletion(
+            itemType = "learning_task",
+            itemRemoteId = task.remoteId,
+            itemTitle = task.title,
+            reasonCategory = reasonCategory,
+            reasonDetail = reasonDetail,
+        )
+        dao.deleteTask(task.remoteId)
+        syncError = syncError.combine(syncDelete("learning_tasks", task.remoteId))
+        return RepositoryResult(syncError)
+    }
+
+    suspend fun deleteScheduleItem(
+        item: ScheduleItemEntity,
+        reasonCategory: String,
+        reasonDetail: String,
+    ): RepositoryResult {
+        var syncError = auditDeletion(
+            itemType = "schedule_item",
+            itemRemoteId = item.remoteId,
+            itemTitle = item.title,
+            reasonCategory = reasonCategory,
+            reasonDetail = reasonDetail,
+        )
+        dao.deleteScheduleItem(item.remoteId)
+        syncError = syncError.combine(syncDelete("schedule_items", item.remoteId))
+        return RepositoryResult(syncError)
     }
 
     suspend fun markScheduleDone(item: ScheduleItemEntity): RepositoryResult {
@@ -389,6 +432,8 @@ class LearningRepository(
                 .put("next_action_type", task.nextActionType)
                 .put("next_action_instruction", task.nextActionInstruction)
                 .put("status", task.status)
+                .put("source_type", task.sourceType)
+                .put("source_remote_id", task.sourceRemoteId)
                 .put("created_at", task.createdAt),
         ).exceptionOrNull()?.message
 
@@ -519,6 +564,101 @@ class LearningRepository(
                 .put("verification_status", proof.verificationStatus)
                 .put("ai_feedback", proof.aiFeedback)
                 .put("submitted_at", proof.submittedAt),
+        ).exceptionOrNull()?.message
+
+    private fun monthlyArtPhaseTasks(
+        assignment: SocialPublishingAssignmentEntity,
+        dueDate: String,
+    ): List<LearningTaskEntity> {
+        val sourceType = "social_assignment"
+        return listOf(
+            LearningTaskEntity(
+                title = "草稿 / Thumbnail exploration",
+                description = "為 ${assignment.month} 作品畫 6 個小草圖，選出最清楚的一個構圖方向。",
+                subject = "drawing",
+                suggestedMinutes = 45,
+                completionStandard = "至少 6 個 thumbnail，並寫下選中構圖的原因。",
+                nextActionType = "submit_homework",
+                nextActionInstruction = "提交草稿或截圖給 AI 老師檢查構圖。",
+                sourceType = sourceType,
+                sourceRemoteId = assignment.remoteId,
+            ),
+            LearningTaskEntity(
+                title = "線稿 cleanup",
+                description = "根據選中的草稿完成乾淨線稿，修正比例、透視與主要輪廓。",
+                subject = "drawing",
+                suggestedMinutes = 60,
+                completionStandard = "完成可上色的線稿，線條清楚，主要比例已修正。",
+                nextActionType = "submit_homework",
+                nextActionInstruction = "提交線稿，請 AI 老師檢查比例與可讀性。",
+                sourceType = sourceType,
+                sourceRemoteId = assignment.remoteId,
+            ),
+            LearningTaskEntity(
+                title = "Base colors",
+                description = "鋪好主要底色，確認角色/物件/背景的色塊關係。",
+                subject = "drawing",
+                suggestedMinutes = 45,
+                completionStandard = "至少完成主體與背景 base color，避免只停在線稿。",
+                nextActionType = "submit_homework",
+                nextActionInstruction = "提交 base color 版本，確認色彩方向。",
+                sourceType = sourceType,
+                sourceRemoteId = assignment.remoteId,
+            ),
+            LearningTaskEntity(
+                title = "Rendering / final polish",
+                description = "完成陰影、光源、材質與最後修整，準備發佈版本。",
+                subject = "drawing",
+                suggestedMinutes = 90,
+                completionStandard = "完成可公開發佈的最終圖，並輸出發佈用圖片。",
+                nextActionType = "submit_homework",
+                nextActionInstruction = "提交最終圖給 AI 老師做最後檢查。",
+                sourceType = sourceType,
+                sourceRemoteId = assignment.remoteId,
+            ),
+            LearningTaskEntity(
+                title = "Publish to X/Pixiv and submit proof",
+                description = "將本月完成作品發佈到 X/Twitter 與 Pixiv，回到 Social 頁提交公開連結。",
+                subject = "drawing",
+                suggestedMinutes = 30,
+                completionStandard = "X/Twitter 與 Pixiv 至少各有一個公開作品連結，並已提交 proof。",
+                nextActionType = "continue_chat",
+                nextActionInstruction = "到 Social 頁貼上 X/Pixiv 公開 URL 讓 AI 老師驗證。",
+                sourceType = sourceType,
+                sourceRemoteId = assignment.remoteId,
+            ),
+        )
+    }
+
+    private suspend fun auditDeletion(
+        itemType: String,
+        itemRemoteId: String,
+        itemTitle: String,
+        reasonCategory: String,
+        reasonDetail: String,
+    ): String? {
+        val audit = DeletionAuditEntity(
+            itemType = itemType,
+            itemRemoteId = itemRemoteId,
+            itemTitle = itemTitle,
+            reasonCategory = reasonCategory,
+            reasonDetail = reasonDetail,
+        )
+        dao.insertDeletionAudit(audit)
+        return syncDeletionAudit(audit)
+    }
+
+    private suspend fun syncDeletionAudit(audit: DeletionAuditEntity): String? =
+        supabase.upsert(
+            "deletion_audits",
+            JSONObject()
+                .put("remote_id", audit.remoteId)
+                .put("item_type", audit.itemType)
+                .put("item_remote_id", audit.itemRemoteId)
+                .put("item_title", audit.itemTitle)
+                .put("reason_category", audit.reasonCategory)
+                .put("reason_detail", audit.reasonDetail)
+                .put("deleted_at", audit.deletedAt),
         ).exceptionOrNull()?.message
 
     private suspend fun syncDelete(table: String, remoteId: String): String? =
